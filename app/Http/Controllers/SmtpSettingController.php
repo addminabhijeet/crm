@@ -106,9 +106,10 @@ class SmtpSettingController extends Controller
         $testEmail = $request->test_email;
 
         try {
-            Mail::raw('This is a test email from Synergie Systems CRM.', function ($message) use ($testEmail) {
+            Mail::html('This is a test email from Synergie Systems CRM.', function ($message) use ($testEmail) {
                 $message->to($testEmail)->subject('SMTP Test Email');
             });
+
 
             return response()->json([
                 'message' => "Test email sent successfully to {$testEmail}!"
