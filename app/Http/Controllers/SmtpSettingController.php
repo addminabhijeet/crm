@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use App\Models\SmtpSetting;
+use Symfony\Component\Mime\Part\HtmlPart;
+use Symfony\Component\Mime\Part\TextPart;
 use Symfony\Component\Mailer\Transport\Smtp\EsmtpTransport;
 use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 
@@ -106,10 +108,11 @@ class SmtpSettingController extends Controller
         $testEmail = $request->test_email;
 
         try {
-            Mail::html('This is a test email from Synergie Systems CRM.', function ($message) use ($testEmail) {
-                $message->to($testEmail)->subject('SMTP Test Email');
+            Mail::mailer('smtp')->send([], [], function ($message) use ($testEmail) {
+                $message->to($testEmail)
+                    ->subject('SMTP Test Email')
+                    ->html(new HtmlPart('This is a test email from Synergie Systems CRM.'));
             });
-
 
             return response()->json([
                 'message' => "Test email sent successfully to {$testEmail}!"
