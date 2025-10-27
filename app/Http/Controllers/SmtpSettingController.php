@@ -65,23 +65,19 @@ class SmtpSettingController extends Controller
             return response()->json(['message' => 'No SMTP settings found.'], 400);
         }
 
-        // Determine encryption
         $encryption = strtolower($smtp->encryption);
         if ($encryption === 'ssl/tls') $encryption = 'ssl';
         if (!in_array($encryption, ['ssl', 'tls', null])) $encryption = null;
 
-        // Test SMTP connection
         try {
             $transport = new EsmtpTransport(
                 $smtp->host,
                 $smtp->port,
-                $encryption === 'ssl' // $encryption argument expects bool for SSL
+                $encryption === 'ssl'
             );
 
             $transport->setUsername($smtp->username);
             $transport->setPassword(decrypt($smtp->password));
-
-            // start() will attempt connection
             $transport->start();
         } catch (TransportExceptionInterface $e) {
             return response()->json([
@@ -90,7 +86,6 @@ class SmtpSettingController extends Controller
             ], 500);
         }
 
-        // Override Laravel mail config
         config([
             'mail.default' => 'smtp',
             'mail.mailers.smtp.transport' => 'smtp',
@@ -105,17 +100,15 @@ class SmtpSettingController extends Controller
             'mail.mailers.smtp.timeout' => 30,
         ]);
 
-        $testEmail = $request->test_email;
-
         try {
-            Mail::mailer('smtp')->send([], [], function ($message) use ($testEmail) {
-                $message->to($testEmail)
+            Mail::mailer('smtp')->send([], [], function ($message) use ($request) {
+                $message->to($request->test_email)
                     ->subject('SMTP Test Email')
-                    ->html(new HtmlPart('This is a test email from Synergie Systems CRM.'));
+                    ->html('This is a test email from Synergie Systems CRM.');
             });
 
             return response()->json([
-                'message' => "Test email sent successfully to {$testEmail}!"
+                'message' => "Test email sent successfully to {$request->test_email}!"
             ]);
         } catch (TransportExceptionInterface $e) {
             return response()->json([
